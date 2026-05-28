@@ -3370,10 +3370,38 @@ function _renderCoachClients(users, uids) {
 
 function openClientDetail(uid) {
   window._currentDetailUid = uid;
+  const modal = document.getElementById('modal-client-detail');
+  if(!modal) return;
+
+  // Show loading first
+  modal.style.display = 'flex';
+  document.getElementById('client-detail-content').innerHTML =
+    '<div style="text-align:center;padding:3rem;color:var(--text-muted)">⏳ Cargando datos del cliente...</div>';
+
+  // Load fresh data from Firebase to get latest history
+  if(window._fb) {
+    window._fb.getUserData(uid).then(freshData => {
+      // Update cache with fresh data
+      if(window._coachClients?.[uid] && freshData) {
+        window._coachClients[uid].hist      = freshData.history  || [];
+        window._coachClients[uid].routines  = freshData.routines || [];
+        window._coachClients[uid].loads     = freshData.loads    || {};
+        window._coachClients[uid].anamnesis = !!freshData.anamnesis;
+        window._coachClients[uid].sportFiles= freshData.sportFiles || [];
+        window._coachClients[uid].sessTotal = (freshData.history||[]).length;
+      }
+      _renderClientDetailContent(uid);
+    }).catch(() => _renderClientDetailContent(uid));
+  } else {
+    _renderClientDetailContent(uid);
+  }
+}
+
+function _renderClientDetailContent(uid) {
   const cl = window._coachClients?.[uid];
   if(!cl) return;
   const modal = document.getElementById('modal-client-detail');
-  if(!modal) return;
+  if(!modal) { modal.style.display = 'flex'; }
 
   const planCfg = {free:{label:'Gratuito',color:'#666'},standard:{label:'Estándar',color:'#4A90D9'},pro:{label:'Coaching Pro',color:'#C8E63A'},premium:{label:'Premium',color:'#FF9800'}};
   const pc = planCfg[cl.plan]||planCfg.free;
@@ -3538,7 +3566,7 @@ function openClientDetail(uid) {
       <a href="mailto:${cl.email}" style="display:flex;align-items:center;justify-content:center;gap:8px;background:var(--surface3);color:var(--text);font-weight:700;font-size:13px;padding:12px;border-radius:10px;text-decoration:none;border:1px solid var(--border)">✉️ Email</a>
     </div>`;
 
-  modal.style.display = 'flex';
+  // modal already shown
 }
 
 function closeClientDetail() {
