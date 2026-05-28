@@ -1,10 +1,10 @@
-const CACHE_NAME = 'lift86-v29';
+const CACHE_NAME = 'lift86-v32';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192x192.png',
-  '/icon-512x512.png'
+  '/LIFT/',
+  '/LIFT/index.html',
+  '/LIFT/manifest.json',
+  '/LIFT/icon-192x192.png',
+  '/LIFT/icon-512x512.png'
 ];
 
 // Instalación: cachear archivos esenciales

@@ -6831,10 +6831,10 @@ function openAssignRoutine(clientUid, clientName, editRoutineId = null) {
     document.getElementById('assign-r-name').value     = '';
     document.getElementById('assign-r-protocol').value = 'Fuerza / Hipertrofia';
     document.getElementById('assign-r-days').value     = 4;
-    assignBuildDayTabs();
   }
 
   document.getElementById('modal-assign-routine').style.display = 'flex';
+  setTimeout(() => assignBuildDayTabs(), 50);
 }
 
 function closeAssignRoutine() {
