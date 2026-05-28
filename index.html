@@ -6478,7 +6478,7 @@ function removeSportFile(index) {
 // ═══════════════════════════════════════════════════════
 //  PANEL DEL COACH
 // ═══════════════════════════════════════════════════════
-const COACH_PASSWORD = 'lift.panel.6709354.8943834';
+const COACH_PASSWORD = 'lift.panel.6709';
 
 function openCoachPanel() {
   const input = document.getElementById('coach-panel-pass');
@@ -6813,29 +6813,42 @@ function openAssignRoutine(clientUid, clientName, editRoutineId = null) {
   _assignDayCache  = {};
   _assignEditId    = editRoutineId;
 
-  document.getElementById('assign-client-badge').textContent =
-    '👤 Cliente: ' + clientName;
-  document.getElementById('assign-routine-title').textContent =
-    editRoutineId ? 'Editar entrenamiento' : 'Nuevo entrenamiento para ' + clientName;
+  // Mostrar modal primero
+  const modal = document.getElementById('modal-assign-routine');
+  if(!modal) { alert('Error: modal no encontrado'); return; }
+  modal.style.display = 'flex';
 
-  // Si es edición, cargar datos existentes
-  if(editRoutineId) {
-    const clientData = getStore('lift86_data_' + clientUid) || {};
-    const r = (clientData.routines || []).find(x => x.id === editRoutineId);
-    if(r) {
-      document.getElementById('assign-r-name').value     = r.name || '';
-      document.getElementById('assign-r-protocol').value = r.protocol || 'Fuerza / Hipertrofia';
-      document.getElementById('assign-r-days').value     = r.days?.length || 4;
-      assignBuildDayTabs(r);
+  // Luego poblar campos con delay para asegurar visibilidad
+  setTimeout(function() {
+    const badge = document.getElementById('assign-client-badge');
+    const title = document.getElementById('assign-routine-title');
+    if(badge) badge.textContent = '👤 Cliente: ' + clientName;
+    if(title) title.textContent = editRoutineId
+      ? 'Editar entrenamiento'
+      : 'Nuevo entrenamiento para ' + clientName;
+
+    if(editRoutineId) {
+      const cl = window._coachClients?.[clientUid] || {};
+      const r = (cl.routines || []).find(function(x){ return x.id === editRoutineId; });
+      if(r) {
+        const nameEl = document.getElementById('assign-r-name');
+        const protEl = document.getElementById('assign-r-protocol');
+        const daysEl = document.getElementById('assign-r-days');
+        if(nameEl) nameEl.value = r.name || '';
+        if(protEl) protEl.value = r.protocol || 'Fuerza / Hipertrofia';
+        if(daysEl) daysEl.value = r.days ? r.days.length : 4;
+        assignBuildDayTabs(r);
+      }
+    } else {
+      const nameEl = document.getElementById('assign-r-name');
+      const protEl = document.getElementById('assign-r-protocol');
+      const daysEl = document.getElementById('assign-r-days');
+      if(nameEl) nameEl.value = '';
+      if(protEl) protEl.value = 'Fuerza / Hipertrofia';
+      if(daysEl) daysEl.value = 4;
+      assignBuildDayTabs();
     }
-  } else {
-    document.getElementById('assign-r-name').value     = '';
-    document.getElementById('assign-r-protocol').value = 'Fuerza / Hipertrofia';
-    document.getElementById('assign-r-days').value     = 4;
-  }
-
-  document.getElementById('modal-assign-routine').style.display = 'flex';
-  setTimeout(() => assignBuildDayTabs(), 50);
+  }, 100);
 }
 
 function closeAssignRoutine() {
