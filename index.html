@@ -3391,7 +3391,18 @@ function openClientDetail(uid) {
   }).join('') : '<div style="font-size:12px;color:var(--text-muted)">Sin sesiones registradas.</div>';
 
   const routinesHtml = cl.routines.length ? cl.routines.map(r =>
-    `<div style="padding:6px 8px;background:var(--surface3);border-radius:6px;margin-bottom:5px;font-size:12px;color:var(--text)">${r.name} <span style="color:var(--text-muted)">(${r.days?.length||0} días)</span></div>`
+    `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;
+      padding:8px;background:var(--surface3);border-radius:8px;margin-bottom:6px">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.name}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${r.days?.length||0} días${r.assignedByCoach?' · 🏋️ Asignado por coach':''}</div>
+      </div>
+      <button onclick="editAssignedRoutine('${cl.uid}','${r.id}')"
+        style="background:var(--lime);border:none;color:#000;font-weight:700;
+          font-size:11px;padding:6px 10px;border-radius:6px;cursor:pointer;flex-shrink:0;white-space:nowrap">
+        ✏️ Editar
+      </button>
+    </div>`
   ).join('') : '<div style="font-size:12px;color:var(--text-muted)">Sin rutinas.</div>';
 
   const loadsEntries = Object.entries(cl.loads||{}).slice(0,6);
@@ -6830,16 +6841,35 @@ function openAssignRoutine(clientUid, clientName, editRoutineId = null) {
       : 'Nuevo entrenamiento para ' + clientName;
 
     if(editRoutineId) {
-      const cl = window._coachClients?.[clientUid] || {};
-      const r = (cl.routines || []).find(function(x){ return x.id === editRoutineId; });
-      if(r) {
-        const nameEl = document.getElementById('assign-r-name');
-        const protEl = document.getElementById('assign-r-protocol');
-        const daysEl = document.getElementById('assign-r-days');
-        if(nameEl) nameEl.value = r.name || '';
-        if(protEl) protEl.value = r.protocol || 'Fuerza / Hipertrofia';
-        if(daysEl) daysEl.value = r.days ? r.days.length : 4;
-        assignBuildDayTabs(r);
+      // Load from Firebase to get latest version
+      if(window._fb) {
+        window._fb.getUserData(clientUid).then(function(data) {
+          const r = data ? (data.routines || []).find(function(x){ return x.id === editRoutineId; }) : null;
+          if(r) {
+            const nameEl = document.getElementById('assign-r-name');
+            const protEl = document.getElementById('assign-r-protocol');
+            const daysEl = document.getElementById('assign-r-days');
+            if(nameEl) nameEl.value = r.name || '';
+            if(protEl) protEl.value = r.protocol || 'Fuerza / Hipertrofia';
+            if(daysEl) daysEl.value = r.days ? r.days.length : 4;
+            // Pre-fill day cache
+            (r.days || []).forEach(function(day, i) { _assignDayCache[i] = day; });
+            assignBuildDayTabs(r);
+          }
+        });
+      } else {
+        const cl = window._coachClients?.[clientUid] || {};
+        const r = (cl.routines || []).find(function(x){ return x.id === editRoutineId; });
+        if(r) {
+          const nameEl = document.getElementById('assign-r-name');
+          const protEl = document.getElementById('assign-r-protocol');
+          const daysEl = document.getElementById('assign-r-days');
+          if(nameEl) nameEl.value = r.name || '';
+          if(protEl) protEl.value = r.protocol || 'Fuerza / Hipertrofia';
+          if(daysEl) daysEl.value = r.days ? r.days.length : 4;
+          (r.days || []).forEach(function(day, i) { _assignDayCache[i] = day; });
+          assignBuildDayTabs(r);
+        }
       }
     } else {
       const nameEl = document.getElementById('assign-r-name');
@@ -7115,6 +7145,20 @@ function openAssignLibPicker(btn) {
     picker.style.display = 'flex';
     picker.style.zIndex  = '5000'; // Encima del modal assign (z-index:4000)
   }
+}
+
+
+function editAssignedRoutine(clientUid, routineId) {
+  window._currentDetailUid = clientUid;
+  const cl = window._coachClients?.[clientUid];
+  const clientName = cl ? ((cl.name||'').trim() || cl.email) : clientUid;
+
+  // Ocultar modal-client-detail
+  const clientModal = document.getElementById('modal-client-detail');
+  if(clientModal) clientModal.style.display = 'none';
+
+  // Abrir assign modal en modo edición
+  openAssignRoutine(clientUid, clientName, routineId);
 }
 
 
